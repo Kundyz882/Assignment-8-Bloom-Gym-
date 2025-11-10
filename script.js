@@ -236,59 +236,69 @@ document.addEventListener("DOMContentLoaded", () => {
   if (welcome) welcome.textContent = `${greeting}`;
 
  // ---- Sound on Form Submission ----
-  if (form) {
-    const successSound = new Audio('success.mp3');
-    const submitBtn = form.querySelector('button[type="submit"], #submit');
+const contactForm = document.getElementById("multiStepForm");
+if (contactForm) {
+  const successSound = new Audio("success.mp3");
 
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
+  contactForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!validateStep(currentStep)) return;
 
-      if (!validateStep(currentStep)) return;
-      
+    const submitBtn = contactForm.querySelector('button[type="submit"], #submit');
+    if (!submitBtn) return;
 
-      //----Loading spinner on Submit----
-      if (submitBtn) {
-        submitBtn.innerHTML = `
-          <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-          Please wait...
-        `;
-        submitBtn.disabled = true;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `
+      <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+      Please wait...
+    `;
+
+    setTimeout(() => {
+      submitBtn.innerHTML = "Send";
+      submitBtn.disabled = false;
+
+      try {
+        successSound.play();
+      } catch (e) {
+        console.warn("Sound couldn't be played:", e);
       }
 
-      setTimeout(() => {
-        if (submitBtn) {
-          submitBtn.innerHTML = "Send";
-          submitBtn.disabled = false;
-        }
+      showNotification2("✅ Your message has been successfully sent!");
 
-        try {
-          successSound.play();
-        } catch (e) {
-          console.warn("Sound couldn't be played:", e);
-        }
+      contactForm.reset();
+      currentStep = 0;
+      showStep(currentStep);
+    }, 1000);
+  });
+}
 
-        //----Notification System----
-        showNotification("✅ Your message has been successfully sent!");
+function showNotification2(message) {
+  const notification2 = document.createElement("div");
+  notification2.className = "custom-toast";
+  notification2.textContent = message;
+  document.body.appendChild(notification2);
 
-        form.reset();
-        currentStep = 0;
-        showStep(currentStep);
-      }, 2000);
-    });
-  }
+  setTimeout(() => notification2.classList.add("show"), 10);
+
+  setTimeout(() => {
+    notification2.classList.remove("show");
+    setTimeout(() => notification2.remove(), 500);
+  }, 3000);
+}
+
 
     // ---- Toast Notification----
-    function showNotification(message) {
-      const notification = document.createElement("div");
-      notification.className = "custom-toast";
-      notification.textContent = message;
-      document.body.appendChild(notification);
+    function showNotification2(message) {
+      const notification2 = document.createElement("div");
+      notification2.className = "custom-toast";
+      notification2.textContent = message;
+      document.body.appendChild(notification2);
 
-      setTimeout(() => notification.classList.add("show"), 10);
+      setTimeout(() => notification2.classList.add("show"), 10);
 
       setTimeout(() => {
-        notification.classList.remove("show");
-        setTimeout(() => notification.remove(), 500);
+        notification2.classList.remove("show");
+        setTimeout(() => notification2.remove(), 500);
       }, 3000);
     }
 
@@ -585,7 +595,357 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+ function showNotification(message, duration = 3000) {
+  const container = document.getElementById("notification-container");
+  if (!container) return;
 
+  const notification = document.createElement("div");
+  notification.className = "notification";
+  notification.textContent = message;
+  container.appendChild(notification);
+
+  setTimeout(() => notification.classList.add("show"), 10);
+
+
+  setTimeout(() => {
+    notification.classList.remove("show");
+    setTimeout(() => notification.remove(), 300);
+  }, duration);
+}
+
+ const navAuthLink = document.getElementById("navAuthLink");
+  if (!navAuthLink) return; 
+
+  function refreshNav() {
+    const currentUser = localStorage.getItem("currentUser");
+
+    if (currentUser) {
+  
+      navAuthLink.textContent = "Log Out";
+      navAuthLink.removeAttribute("data-bs-toggle");
+      navAuthLink.removeAttribute("data-bs-target");
+      navAuthLink.href = "#";
+      navAuthLink.onclick = () => {
+        localStorage.removeItem("currentUser");
+        refreshNav();
+        window.location.reload(); 
+      };
+    } else {
+      
+      navAuthLink.textContent = "Sign Up/In";
+      navAuthLink.setAttribute("data-bs-toggle", "modal");
+      navAuthLink.setAttribute("data-bs-target", "#authModal");
+      navAuthLink.href = "#";
+      navAuthLink.onclick = null;
+    }
+  }
+
+  refreshNav();
+  // ===== Sign Up Sign In =====
+  const signupFormBlock = document.getElementById("signupFormBlock");
+  const signinFormBlock = document.getElementById("signinFormBlock");
+
+  const signupForm = document.getElementById("signupForm");
+  const signinForm = document.getElementById("signinForm");
+ 
+
+
+  document.addEventListener("input", e => {
+    if (e.target.id === "signupPhone") {
+      let value = e.target.value.replace(/\D/g, "");
+      if (!value.startsWith("7")) value = "7" + value;
+      value = value.substring(0, 11);
+
+      let formatted = "+7";
+      if (value.length > 1) formatted += " (" + value.substring(1, 4);
+      if (value.length >= 4) formatted += ") " + value.substring(4, 7);
+      if (value.length >= 7) formatted += "-" + value.substring(7, 9);
+      if (value.length >= 9) formatted += "-" + value.substring(9, 11);
+
+      e.target.value = formatted;
+    }
+  });
+
+
+  const switchToSignIn = document.getElementById("switchToSignIn");
+  const switchToSignUp = document.getElementById("switchToSignUp");
+
+  if (switchToSignIn) {
+    switchToSignIn.addEventListener("click", () => {
+      signupFormBlock.style.display = "none";
+      signinFormBlock.style.display = "block";
+      document.getElementById("signinEmail").focus();
+      clearErrors();
+      clearSignUpGlobalError();
+      clearSignInGlobalError();
+    });
+  }
+
+  if (switchToSignUp) {
+    switchToSignUp.addEventListener("click", () => {
+      signinFormBlock.style.display = "none";
+      signupFormBlock.style.display = "block";
+      document.getElementById("signupName").focus();
+      clearErrors();
+      clearSignUpGlobalError();
+      clearSignInGlobalError();
+    });
+  }
+
+  function showError(input, msg) {
+    if (!input) return;
+    const error = document.createElement("small");
+    error.className = "error";
+    error.style.color = "#e75480";
+    error.textContent = msg;
+    input.insertAdjacentElement("afterend", error);
+    input.classList.add("is-invalid");
+  }
+
+  function clearErrors() {
+    document.querySelectorAll(".error").forEach(e => e.remove());
+    document.querySelectorAll(".is-invalid").forEach(e => e.classList.remove("is-invalid"));
+  }
+
+ 
+  function showSignUpGlobalError(msg) {
+    const globalError = document.getElementById("signupGlobalError");
+    if (globalError) {
+      globalError.textContent = msg;
+      globalError.style.display = "block";
+    }
+  }
+
+  function clearSignUpGlobalError() {
+    const globalError = document.getElementById("signupGlobalError");
+    if (globalError) {
+      globalError.textContent = "";
+      globalError.style.display = "none";
+    }
+  }
+
+  function showSignInGlobalError(msg) {
+    const globalError = document.getElementById("signinGlobalError");
+    if (globalError) {
+      globalError.textContent = msg;
+      globalError.style.display = "block";
+    }
+  }
+
+  function clearSignInGlobalError() {
+    const globalError = document.getElementById("signinGlobalError");
+    if (globalError) {
+      globalError.textContent = "";
+      globalError.style.display = "none";
+    }
+  }
+
+  // ===== Sign Up =====
+  if (signupForm) {
+    signupForm.addEventListener("submit", function(e) {
+      e.preventDefault();
+      clearErrors();
+      clearSignUpGlobalError();
+      clearSignInGlobalError();
+
+      const name = document.getElementById("signupName");
+      const surname = document.getElementById("signupSurname");
+      const email = document.getElementById("signupEmail");
+      const phone = document.getElementById("signupPhone");
+      const password = document.getElementById("signupPassword");
+
+      let valid = true;
+      if (!name.value.trim()) { showError(name, "Enter your name"); valid = false; }
+      if (!surname.value.trim()) { showError(surname, "Enter your surname"); valid = false; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) { showError(email, "Invalid email"); valid = false; }
+      if (!/^\+7\s?\(\d{3}\)\s?\d{3}-\d{2}-\d{2}$/.test(phone.value.trim())) { showError(phone, "Invalid phone"); valid = false; }
+      if (password.value.trim().length < 8) { showError(password, "Password must be at least 8 characters"); valid = false; }
+
+      if (!valid) return;
+
+      const emailLower = email.value.trim().toLowerCase();
+      const userKey = "user_" + emailLower;
+      if (localStorage.getItem(userKey)) {
+        showSignUpGlobalError("This account already exists. Please sign in below.");
+        return;
+      }
+
+      const userData = {
+        name: name.value.trim(),
+        surname: surname.value.trim(),
+        email: email.value.trim(),
+        phone: phone.value.trim(),
+        password: password.value.trim()
+      };
+      localStorage.setItem(userKey, JSON.stringify(userData));
+
+      localStorage.setItem("currentUser", emailLower);
+
+      showNotification("Registration successful!");
+      window.location.href = `profile.html`;
+    });
+  }
+
+  // ===== Sign In =====
+  if (signinForm) {
+    signinForm.addEventListener("submit", function(e) {
+      e.preventDefault();
+      clearErrors();
+      clearSignInGlobalError();
+      clearSignUpGlobalError();
+
+      const email = document.getElementById("signinEmail");
+      const password = document.getElementById("signinPassword");
+
+      let valid = true;
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) { showError(email, "Invalid email"); valid = false; }
+      if (!password.value.trim()) { showError(password, "Enter your password"); valid = false; }
+
+      if (!valid) return;
+
+      const emailLower = email.value.trim().toLowerCase();
+      const userKey = "user_" + emailLower;
+      const userData = JSON.parse(localStorage.getItem(userKey));
+
+      if (!userData) {
+        showSignInGlobalError("This account doesn't exist. Please sign up.");
+        return;
+      }
+
+      if (userData.password === password.value.trim()) {
+        localStorage.setItem("currentUser", emailLower);
+        showNotification("Logged in successfully!");
+          setTimeout(() => {
+            window.location.href = `profile.html`;
+          }, 500);
+          
+        
+      } else {
+        showSignInGlobalError("Incorrect email or password");
+      }
+    });
+  }
+  
+
+const currentEmail = localStorage.getItem("currentUser");
+const profileDataBlock = document.getElementById("profileData");
+const logoutBtn = document.getElementById("logoutBtn");
+const authForms = document.getElementById("authForms");
+const extraDisplay = document.getElementById("extraDisplay");
+
+if (currentEmail) {
+  if (profileDataBlock) profileDataBlock.style.display = "block";
+  if (logoutBtn) logoutBtn.style.display = "block";
+  if (authForms) authForms.style.display = "none";
+
+  const userKey = "user_" + currentEmail;
+  const extraKey = "extraData_" + currentEmail;
+
+  const userData = JSON.parse(localStorage.getItem(userKey)) || {};
+  const extraData = JSON.parse(localStorage.getItem(extraKey)) || {};
+
+ 
+  profileDataBlock.innerHTML = `
+    <form id="fullEditForm" class="mt-3">
+      <h5 class="mb-3 fw-semibold text-center">Profile Information</h5>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">First Name </label>
+        <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-person"></i></span>
+        <input type="text" id="editName" class="form-control" value="${userData.name || ''}">
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Last Name</label>
+        <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
+        <input type="text" id="editSurname" class="form-control" value="${userData.surname || ''}">
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Email</label>
+        <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+        <input type="email" id="editEmail" class="form-control" value="${userData.email || ''}" disabled>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Phone</label>
+        <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+        <input type="text" id="editPhone" class="form-control" value="${userData.phone || ''}">
+        </div>
+      </div>
+
+      <h5 class="mb-3 mt-4 fw-semibold text-center">Additional Information</h5>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">City</label>
+        <input type="text" id="city" class="form-control" value="${extraData.city || ''}">
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Date of Birth</label>
+        <input type="date" id="date" class="form-control" value="${extraData.date || ''}">
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Goal</label>
+        <input type="text" id="goal" class="form-control" value="${extraData.goal || ''}">
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Favourite color</label>
+        <input type="color" id="color" class="form-control" value="${extraData.color || ''}">
+      </div>
+
+      <button type="submit" class="btn btn-secondary w-100 mt-3">Save Changes</button>
+    </form>
+  `;
+
+  const fullForm = document.getElementById("fullEditForm");
+  fullForm.addEventListener("submit", e => {
+    e.preventDefault();
+
+    userData.name = document.getElementById("editName").value.trim();
+    userData.surname = document.getElementById("editSurname").value.trim();
+    userData.phone = document.getElementById("editPhone").value.trim();
+
+    const date = document.getElementById("date").value.trim();
+    const goal = document.getElementById("goal").value.trim();
+    const city = document.getElementById("city").value.trim();
+    const color = document.getElementById("color").value.trim();
+    
+
+
+    localStorage.setItem(userKey, JSON.stringify(userData));
+    localStorage.setItem(extraKey, JSON.stringify({ city,date, goal,color }));
+
+    displayExtra({ city,date, goal,color});
+    showNotification("All information saved successfully!");
+  });
+
+  displayExtra(extraData);
+
+  logoutBtn?.addEventListener("click", () => {
+    localStorage.removeItem("currentUser");
+    showNotification("You have successfully logged out!");
+      setTimeout(() => {
+        window.location.href = "index.html";
+      }, 1000);
+  });
+  
+
+} else {
+  if (authForms) authForms.style.display = "block";
+}
+
+function displayExtra(data) {
+  extraDisplay.innerHTML = `
+    <p><strong>City:</strong> ${data.city || ''}</p>
+    <p><strong>Birth Date:</strong> ${data.date || ''}</p>
+    <p><strong>Goal:</strong> ${data.goal || ''}</p>
+    <p><strong>Color:</strong> ${data.color || ''}</p>
+
+  `;
+}
+    
 
 });
 
